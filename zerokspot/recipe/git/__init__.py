@@ -36,7 +36,7 @@ class Recipe(object):
         try:
             os.chdir(self.target)
             
-            ec = subprocess.call(r'git checkout "%s"' % (self.branch,),
+            ec = subprocess.call(r'git checkout "origin/%s"' % (self.branch,),
                     shell=True)
             if ec != 0:
                 raise zc.buildout.UserError("Failed to switch branch")
@@ -56,10 +56,11 @@ class Recipe(object):
             print "Pulling updates from origin"
             os.chdir(self.target)
             try:
-                ec = subprocess.call('git pull', shell=True)
+                ec = subprocess.call('git pull origin "%s"' % (self.branch),
+                        shell=True)
                 if ec != 0:
                     raise zc.buildout.UserError("Failed to pull")
             finally:
                 os.chdir(self.buildout['buildout']['directory'])
         else:
-            print "Pulling disable for this task"
+            print "Pulling disable for this part"
