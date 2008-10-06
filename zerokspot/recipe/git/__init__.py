@@ -23,6 +23,8 @@ class Recipe(object):
         self.repository = options['repository']
         self.branch = options.get('branch', 'master')
         self.rev = options.get('rev', None)
+        self.newest = options.get('newest', 
+                buildout['buildout'].get('newest', "false")).lower() == 'true'
         self.target = os.path.join(buildout['buildout']['directory'], 
                 'parts', name)
 
@@ -49,4 +51,15 @@ class Recipe(object):
             return self.target
 
     def update(self):
-        pass
+        if self.rev is None and self.newest:
+            # Do an update of the current branch
+            print "Pulling updates from origin"
+            os.chdir(self.target)
+            try:
+                ec = subprocess.call('git pull', shell=True)
+                if ec != 0:
+                    raise zc.buildout.UserError("Failed to pull")
+            finally:
+                os.chdir(self.buildout['buildout']['directory'])
+        else:
+            print "Pulling disable for this task"
