@@ -1,3 +1,19 @@
+"""
+zerokspot.recipe.git is a small recipe that allows you to use git
+repositories in a similar way like iw.recipe.subversion does for
+subversion repositories::
+
+    [myapp]
+    recipe = zerokspot.recipe.git
+    repository = <url-of-repository>
+    branch = <name-of-branch> # default: "master"
+    rev = <name-of-revision> # default: None
+    newest = [true|false] # default: false, stay up to date even when
+                          # when updating unless rev is set
+
+This would store the cloned repository in ${buildout:directory}/parts/myapp.
+"""
+
 import subprocess
 import os.path
 import zc.buildout
@@ -29,36 +45,49 @@ class Recipe(object):
                 'parts', name)
 
     def install(self):
-        ec = subprocess.call(r'git clone "%s" "%s"' % 
+        """
+        Method called when installing a part (or when the part's config
+        was changed. It clones the the given git repository and checks
+        out the requested branch or commit.
+
+        Returns the path to the part's directory.
+        """
+        status = subprocess.call(r'git clone "%s" "%s"' % 
                 (self.repository, self.target), shell=True)
-        if ec != 0:
+        if status != 0:
             raise zc.buildout.UserError("Failed to clone repository")
         try:
             os.chdir(self.target)
             
-            ec = subprocess.call(r'git checkout "origin/%s"' % (self.branch,),
-                    shell=True)
-            if ec != 0:
+            status = subprocess.call(r'git checkout "origin/%s"' % 
+                    (self.branch,), shell=True)
+            if status != 0:
                 raise zc.buildout.UserError("Failed to switch branch")
 
             if self.rev is not None:
-                ec = subprocess.call(r'git checkout "%s"' % (self.rev,),
+                status = subprocess.call(r'git checkout "%s"' % (self.rev,),
                         shell=True)
-            if ec != 0:
+            if status != 0:
                 raise zc.buildout.UserError("Failed to checkout revision")
         finally:
             os.chdir(self.buildout['buildout']['directory'])
             return self.target
 
     def update(self):
+        """
+        Called when the buildout is called again without the local 
+        configuration having been altered. If no revision was 
+        requested and the newest-option enabled it tries to update the 
+        requested branch.
+        """
         if self.rev is None and self.newest:
             # Do an update of the current branch
             print "Pulling updates from origin"
             os.chdir(self.target)
             try:
-                ec = subprocess.call('git pull origin "%s"' % (self.branch),
+                status = subprocess.call('git pull origin "%s"' % (self.branch),
                         shell=True)
-                if ec != 0:
+                if status != 0:
                     raise zc.buildout.UserError("Failed to pull")
             finally:
                 os.chdir(self.buildout['buildout']['directory'])
