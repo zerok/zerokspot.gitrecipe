@@ -41,8 +41,8 @@ class Recipe(object):
         self.rev = options.get('rev', None)
         self.newest = options.get('newest', 
                 buildout['buildout'].get('newest', "false")).lower() == 'true'
-        options['location'] = os.path.join(buildout['buildout']['directory'], 
-                'parts', name)
+        options['location'] = os.path.join(
+                buildout['buildout']['parts-directory'], name)
 
     def install(self):
         """
