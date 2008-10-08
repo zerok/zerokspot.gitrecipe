@@ -58,9 +58,12 @@ class Recipe(object):
             raise zc.buildout.UserError("Failed to clone repository")
         try:
             os.chdir(self.options['location'])
-            
-            status = subprocess.call(r'git checkout "origin/%s"' % 
-                    (self.branch,), shell=True)
+            if self.branch != 'master':
+                branch = 'origin/%s' % (self.branch, )
+            else:
+                branch = 'master'
+            status = subprocess.call(r'git checkout "%s"' % 
+                    (branch,), shell=True)
             if status != 0:
                 raise zc.buildout.UserError("Failed to switch branch")
 
