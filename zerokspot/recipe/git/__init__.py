@@ -41,7 +41,7 @@ class Recipe(object):
         self.rev = options.get('rev', None)
         self.newest = options.get('newest', 
                 buildout['buildout'].get('newest', "false")).lower() == 'true'
-        self.target = os.path.join(buildout['buildout']['directory'], 
+        options['location'] = os.path.join(buildout['buildout']['directory'], 
                 'parts', name)
 
     def install(self):
@@ -53,11 +53,11 @@ class Recipe(object):
         Returns the path to the part's directory.
         """
         status = subprocess.call(r'git clone "%s" "%s"' % 
-                (self.repository, self.target), shell=True)
+                (self.repository, self.options['location']), shell=True)
         if status != 0:
             raise zc.buildout.UserError("Failed to clone repository")
         try:
-            os.chdir(self.target)
+            os.chdir(self.options['location'])
             
             status = subprocess.call(r'git checkout "origin/%s"' % 
                     (self.branch,), shell=True)
@@ -71,7 +71,7 @@ class Recipe(object):
                 raise zc.buildout.UserError("Failed to checkout revision")
         finally:
             os.chdir(self.buildout['buildout']['directory'])
-            return self.target
+            return self.options['location']
 
     def update(self):
         """
@@ -83,7 +83,7 @@ class Recipe(object):
         if self.rev is None and self.newest:
             # Do an update of the current branch
             print "Pulling updates from origin"
-            os.chdir(self.target)
+            os.chdir(self.options['location'])
             try:
                 status = subprocess.call('git pull origin "%s"' % (self.branch),
                         shell=True)
