@@ -95,4 +95,6 @@ class Recipe(object):
             finally:
                 os.chdir(self.buildout['buildout']['directory'])
         else:
+            # "newest" is also automatically disabled if "offline"
+            # is set. 
             print "Pulling disable for this part"
