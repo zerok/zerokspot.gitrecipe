@@ -5,7 +5,7 @@ setup(
         author='Horst Gutmann',
         author_email='zerok@zerokspot.com',
         description='Simple zc.buildout recipe for sources in a git repository',
-        version='0.1.0',
+        version='0.2.0',
         url='http://github.com/zerok/zerokspot.gitrecipe/',
         install_requires=['setuptools', 'zc.buildout'],
         namespace_packages=['zerokspot'],
