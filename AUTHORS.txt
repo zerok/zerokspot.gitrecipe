@@ -1,0 +1,8 @@
+Maintainers:
+
+    * Horst Gutmann <http://zerokspot.com/>
+
+Contributors:
+    
+    * Jannis Leidel <http://jezdez.com/> 
+    * Matthew R. Scott <http://http://goldenspud.com/rotr/>
