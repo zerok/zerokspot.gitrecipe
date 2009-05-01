@@ -10,6 +10,8 @@ subversion repositories::
     rev = <name-of-revision> # default: None
     newest = [true|false] # default: false, stay up to date even when
                           # when updating unless rev is set
+    as_egg = [true|false] # default: false, install the fetched repo as
+                          # egg
 
 This would store the cloned repository in ${buildout:directory}/parts/myapp.
 """
@@ -47,7 +49,7 @@ class Recipe(object):
                 buildout['buildout'].get('newest', "false")).lower() == 'true'
         options['location'] = os.path.join(
                 buildout['buildout']['parts-directory'], name)
-        self.as_egg = options.get('as_egg', False)
+        self.as_egg = options.get('as_egg', 'false').lower() == 'true'
 
     def install(self):
         """
