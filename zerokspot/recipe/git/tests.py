@@ -78,13 +78,26 @@ repository = %(repo)s
 [buildout]
 parts = gittest
 download-cache = %(cache)s
-install-from-cache = true
 
 [gittest]
 recipe = zerokspot.recipe.git
 repository = %(repo)s
         """ % {'repo' : self.temprepo, 'cache': self.tempcache})
-        build = zc.buildout.buildout.Buildout(os.path.join(self.tempdir, 'buildout.cfg'), [])
+
+        # First install as usual
+        build = zc.buildout.buildout.Buildout(
+                    os.path.join(self.tempdir, 'buildout.cfg'), [])
+        build.install(None)
+        self.assertFalse(build['gittest'].recipe.installed_from_cache)
+
+        # clear buildout
+        os.unlink(os.path.join(build['buildout']['directory'], '.installed.cfg'))
+        testing.rmdir(build['buildout']['directory'], 'parts')
+
+        # now install from cache
+        build = zc.buildout.buildout.Buildout(
+                    os.path.join(self.tempdir, 'buildout.cfg'),
+                    [('buildout', 'install-from-cache', 'true')])
         build.install(None)
         self.assertTrue(build['gittest'].recipe.installed_from_cache)
 

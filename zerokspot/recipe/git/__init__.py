@@ -86,7 +86,6 @@ class Recipe(object):
             # and copy it into parts/<part-name>. If there is nothing inside
             # the download cache, fetch the repo as usual and then copy it
             # into the download cache.
-            #set_trace()
             if os.path.exists(self.cache_path):
                 shutil.copytree(self.cache_path, self.options['location']) 
                 os.chdir(self.buildout['buildout']['directory'])
