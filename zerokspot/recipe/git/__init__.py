@@ -23,12 +23,20 @@ import zc.buildout
 import shutil
 
 
-def git(operation, args, message):
-    command = r'git %s ' + ' '.join(('"%s"',) * len(args))
-    command = command % ((operation,) + tuple(args))
-    status = subprocess.call(command, shell=True, stdout=open(os.devnull, 'w'),
+def git(operation, args, message, ignore_errnos=None):
+    """
+    Execute a git operation with the given arguments. If it fails, raise an
+    exception with the given message. If ignore_errnos is a list of status
+    codes, they will be not handled as errors if returned by git.
+    """
+    real_args = ['-q'] + list(args)
+    command = r'git %s ' + ' '.join(('"%s"',) * len(real_args))
+    command = command % ((operation,) + tuple(real_args))
+    status = subprocess.call(command, shell=True, stdout=None,#open(os.devnull, 'w'),
             stderr=subprocess.STDOUT)
-    if status != 0:
+    if ignore_errnos is None:
+        ignore_errnos = []
+    if status != 0 and status not in ignore_errnos:
         raise zc.buildout.UserError(message)
 
 
@@ -72,16 +80,24 @@ class Recipe(object):
         self.rev = options.get('rev', None)
         self.newest = options.get('newest',
                 buildout['buildout'].get('newest', "false")).lower() == 'true'
-        self.cache_install = options.get('install-from-cache', 
+        self.offline = options.get('offline', 'false').lower() == 'true'
+        self.cache_install = self.offline or options.get('install-from-cache',
                 buildout['buildout'].get('install-from-cache', 'false')) \
                         .lower() == 'true'
         self.cache_name = options.get('cache-name', 
-                get_reponame(self.repository, self.branch, self.rev))
-        self.cache_path = os.path.join(buildout['buildout']['download-cache'],
-                self.cache_name)
+                get_reponame(self.repository))
+        self.download_cache = self.buildout['buildout'].get('download-cache', None)
+        if self.download_cache:
+            self.cache_path = os.path.join(buildout['buildout']['download-cache'],
+                    self.cache_name)
         options['location'] = os.path.join(
                 buildout['buildout']['parts-directory'], name)
         self.as_egg = options.get('as_egg', 'false').lower() == 'true'
+        self.root_dir = self.buildout['buildout']['directory']
+        self.cache_created = False
+        self.cache_updated = False
+        self.part_updated = False
+        self.cache_cloned = False
         self.installed_from_cache = False
 
     def install(self):
@@ -92,51 +108,31 @@ class Recipe(object):
 
         Returns the path to the part's directory.
         """
-
         if self.cache_install:
-            # Check if a repo with the same name exists in the download cache
-            # and copy it into parts/<part-name>. If there is nothing inside
-            # the download cache, fetch the repo as usual and then copy it
-            # into the download cache.
+            if not self.download_cache:
+                raise zc.buildout.UserError("Offline mode requested and no "
+                                            "download-cache specified")
             if os.path.exists(self.cache_path):
-                git('clone', (self.cache_path, self.options['location']),
-                        'Failed to clone repository')
-
-                os.chdir(self.buildout['buildout']['directory'])
+                self._clone_cache()
                 self.installed_from_cache = True
-                return self.options['location']
             else:
                 raise zc.buildout.UserError("No repository in the download "
                                             "cache directory.")
         else:
-            os.chdir(self.buildout['buildout']['download-cache'])
-
-            if os.path.exists(self.cache_path):
-                shutil.rmtree(self.cache_path)
-
-            git('clone', (self.repository, self.cache_name),
-                    'Failed to clone repository')
-
-            os.chdir(self.cache_path)
-            if self.branch != 'master':
-                branch = 'origin/%s' % (self.branch, )
+            if self.download_cache:
+                if not os.path.exists(self.cache_path):
+                    self._clone_upstream()
+                if self.newest:
+                    # Update the cache first
+                    self._update_cache()
+                else:
+                    self.installed_from_cache = True
+                self._clone_cache()
             else:
-                branch = 'master'
-
-            git('checkout', (branch,), 'Failed to switch branch')
-
-            if self.rev is not None:
-                git('checkout', (self.rev,), 'Failed to checkout revision')
-
-            git('clone', (self.cache_path, self.options['location']),
-                    'Failed to clone repository')
-
-            if self.as_egg:
-                self._install_as_egg()
-
-            os.chdir(self.buildout['buildout']['directory'])
-            return self.options['location']
-
+                self._clone(self.repository, self.options['location'])
+        if self.as_egg:
+            self_install_as_egg()
+        return self.options['location']
 
     def update(self):
         """
@@ -148,18 +144,77 @@ class Recipe(object):
         if self.rev is None and self.newest:
             # Do an update of the current branch
             print "Pulling updates from origin"
+            if not self.cache_install:
+                self._update_cache()
+            self._update_part()
             os.chdir(self.options['location'])
-            try:
-                git('pull origin', (self.branch), 'Failed to pull')
-
-                if self.as_egg:
-                    self._install_as_egg()
-            finally:
-                os.chdir(self.buildout['buildout']['directory'])
+            if self.as_egg:
+                self._install_as_egg()
         else:
             # "newest" is also automatically disabled if "offline"
             # is set.
             print "Pulling disable for this part"
+
+    def _clone(self, from_, to):
+        """
+        Clone a repository located at ``from_`` to ``to``.
+        """
+        try:
+            git('clone', (from_, to), "Couldn't clone %s into %s" % (
+                    from_, to, ))
+            os.chdir(to)
+
+            if self.branch != 'master':
+                args = ('-t', 'origin/%s' % self.branch, )
+            else:
+                args = ('master', )
+            git('checkout', args, "Failed to switch to branch '%s'" % args[-1], ignore_errnos=[128])
+            if self.rev is not None:
+                git('checkout', (self.rev, ), "Failed to checkout revision")
+        finally:
+            os.chdir(self.root_dir)
+    
+    def _clone_cache(self):
+        """
+        Clone the cache into the parts directory.
+        """
+        if not os.path.exists(self.cache_path):
+            self._clone_upstream()
+        if os.path.exists(self.options['location']):
+            shutil.rmtree(self.options['location'])
+        self._clone(self.cache_path, self.options['location'])
+        self.cache_cloned = True
+
+    def _clone_upstream(self):
+        """
+        Clone the upstream repository into the cache
+        """
+        self._clone(self.repository, self.cache_path)
+        self.cache_created = True
+
+    def _update_cache(self):
+        """
+        Updates the cached repository.
+        """
+        self._update_repository(self.cache_path)
+        self.cache_updated = True
+
+    def _update_part(self):
+        """
+        Updates the repository in the buildout's parts directory.
+        """
+        self._update_repository(self.options['location'])
+        self.part_updated = True
+
+    def _update_repository(self, path):
+        """
+        Update the repository from the given path
+        """
+        try:
+            os.chdir(path)
+            git('pull', ('origin', self.branch, ), "Failed to update repository")
+        finally:
+            os.chdir(self.root_dir)
 
     def _install_as_egg(self):
         """

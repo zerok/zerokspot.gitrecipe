@@ -46,6 +46,8 @@ class UtilsTests(unittest.TestCase):
 class RecipeTests(unittest.TestCase):
     def setUp(self):
         self.tempdir = tempfile.mkdtemp()
+        os.mkdir(os.path.join(self.tempdir, 'downloads'))
+
         self.tempcache = tempfile.mkdtemp()
         self.temprepos = tempfile.mkdtemp()
         self.repo_name = 'testrepo'
@@ -58,13 +60,21 @@ class RecipeTests(unittest.TestCase):
         testing.system('cd %s && git init' % self.temprepo)
         testing.write(self.temprepo, 'test.txt', 'TEST')
         testing.system('cd %s && git add test.txt && git commit -m "Init"' % self.temprepo)
-
+        testing.write(self.temprepo, 'test2.txt', 'TEST')
+        testing.system('cd %s && git checkout -b test && git add test2.txt && git commit -m "Test-branch" && git checkout master' % self.temprepo)
 
     def tearDown(self):
         testing.rmdir(self.tempdir)
         testing.rmdir(self.tempcache)
         testing.rmdir(self.temprepos)
 
+    def _buildout(self, options=None):
+        if options is None:
+            options = []
+        build = zc.buildout.buildout.Buildout(os.path.join(self.tempdir, 'buildout.cfg'), options)
+        build.init(None)
+        build.install(None)
+        return build
 
     def testFetch(self):
         """
@@ -79,9 +89,7 @@ parts = gittest
 recipe = zerokspot.recipe.git
 repository = %(repo)s
         """ % {'repo' : self.temprepo})
-        build = zc.buildout.buildout.Buildout(os.path.join(self.tempdir, 'buildout.cfg'), [])
-        build.install(None)
-        self.assertTrue(os.path.exists(os.path.join(build['buildout']['download-cache'], self.repo_name, 'test.txt')))
+        self._buildout()
         self.assertTrue(os.path.exists(os.path.join(self.tempdir, 'parts', 'gittest', 'test.txt')))
 
     def testRaiseExceptionOnAbsentCache(self):
@@ -116,9 +124,7 @@ repository = %(repo)s
         """ % {'repo' : self.temprepo, 'cache': self.tempcache})
 
         # First install as usual
-        build = zc.buildout.buildout.Buildout(
-                    os.path.join(self.tempdir, 'buildout.cfg'), [])
-        build.install(None)
+        build = self._buildout()
         self.assertFalse(build['gittest'].recipe.installed_from_cache)
 
         # clear buildout
@@ -126,11 +132,27 @@ repository = %(repo)s
         testing.rmdir(build['buildout']['directory'], 'parts')
 
         # now install from cache
-        build = zc.buildout.buildout.Buildout(
-                    os.path.join(self.tempdir, 'buildout.cfg'),
-                    [('buildout', 'install-from-cache', 'true')])
-        build.install(None)
+        build = self._buildout([('buildout', 'install-from-cache', 'true')])
         self.assertTrue(build['gittest'].recipe.installed_from_cache)
+
+    def testNonstandardBranch(self):
+        """
+        Tests if install from the dowload-cache works with a non-standard branch.
+        """
+        testing.write(self.tempdir, 'buildout.cfg', """
+[buildout]
+parts = gittest
+download-cache = %(cache)s
+
+[gittest]
+recipe = zerokspot.recipe.git
+branch = test
+repository = %(repo)s
+        """ % {'repo' : self.temprepo, 'cache': self.tempcache})
+        build = self._buildout()
+        recipe = build['gittest'].recipe
+        self.assertTrue(os.path.exists(os.path.join(recipe.cache_path, 'test2.txt')))
+        self.assertTrue(os.path.exists(os.path.join(recipe.options['location'], 'test2.txt')))
 
 if __name__ == '__main__':
     sys.path.insert(0,  os.path.normpath(
