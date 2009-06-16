@@ -21,14 +21,16 @@ import subprocess
 import os.path
 import zc.buildout
 import shutil
-from pdb import set_trace
+
 
 def git(operation, args, message):
     command = r'git %s ' + ' '.join(('"%s"',) * len(args))
     command = command % ((operation,) + tuple(args))
-    status = subprocess.call(command, shell=True)
+    status = subprocess.call(command, shell=True, stdout=open(os.devnull, 'w'),
+            stderr=subprocess.STDOUT)
     if status != 0:
         raise zc.buildout.UserError(message)
+
 
 def get_reponame(url, branch = None, rev = None):
     """
@@ -97,20 +99,23 @@ class Recipe(object):
             # the download cache, fetch the repo as usual and then copy it
             # into the download cache.
             if os.path.exists(self.cache_path):
-                git('clone', (self.cache_path, self.options['location']), 'Failed to clone repository')
+                git('clone', (self.cache_path, self.options['location']),
+                        'Failed to clone repository')
 
                 os.chdir(self.buildout['buildout']['directory'])
                 self.installed_from_cache = True
                 return self.options['location']
             else:
-                raise zc.buildout.UserError("No repository in the download cache directory.")
+                raise zc.buildout.UserError("No repository in the download "
+                                            "cache directory.")
         else:
             os.chdir(self.buildout['buildout']['download-cache'])
 
             if os.path.exists(self.cache_path):
                 shutil.rmtree(self.cache_path)
 
-            git('clone', (self.repository, self.cache_name), 'Failed to clone repository')
+            git('clone', (self.repository, self.cache_name),
+                    'Failed to clone repository')
 
             os.chdir(self.cache_path)
             if self.branch != 'master':
@@ -123,7 +128,8 @@ class Recipe(object):
             if self.rev is not None:
                 git('checkout', (self.rev,), 'Failed to checkout revision')
 
-            git('clone', (self.cache_path, self.options['location']), 'Failed to clone repository')
+            git('clone', (self.cache_path, self.options['location']),
+                    'Failed to clone repository')
 
             if self.as_egg:
                 self._install_as_egg()
