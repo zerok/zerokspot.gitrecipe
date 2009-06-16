@@ -23,6 +23,13 @@ import zc.buildout
 import shutil
 from pdb import set_trace
 
+def git(operation, args, message):
+    command = r'git %s ' + ' '.join(('"%s"',) * len(args))
+    command = command % ((operation,) + tuple(args))
+    status = subprocess.call(command, shell=True)
+    if status != 0:
+        raise zc.buildout.UserError(message)
+
 def get_reponame(url):
     """
     Given the URL of a repository, this function returns the name of it after
@@ -87,7 +94,8 @@ class Recipe(object):
             # the download cache, fetch the repo as usual and then copy it
             # into the download cache.
             if os.path.exists(self.cache_path):
-                shutil.copytree(self.cache_path, self.options['location']) 
+                git('clone', (self.cache_path, self.options['location']), 'Failed to clone repository')
+
                 os.chdir(self.buildout['buildout']['directory'])
                 self.installed_from_cache = True
                 return self.options['location']
@@ -99,31 +107,20 @@ class Recipe(object):
             if os.path.exists(self.cache_path):
                 shutil.rmtree(self.cache_path)
 
-            status = subprocess.call(r'git clone "%s" "%s"' %
-                    (self.repository, self.cache_name), shell=True)
-            if status != 0:
-                raise zc.buildout.UserError("Failed to clone repository")
+            git('clone', (self.repository, self.cache_name), 'Failed to clone repository')
 
             os.chdir(self.cache_path)
             if self.branch != 'master':
                 branch = 'origin/%s' % (self.branch, )
             else:
                 branch = 'master'
-            status = subprocess.call(r'git checkout "%s"' %
-                    (branch,), shell=True)
-            if status != 0:
-                raise zc.buildout.UserError("Failed to switch branch")
+
+            git('checkout', (branch,), 'Failed to switch branch')
 
             if self.rev is not None:
-                status = subprocess.call(r'git checkout "%s"' % (self.rev,),
-                        shell=True)
-            if status != 0:
-                raise zc.buildout.UserError("Failed to checkout revision")
+                git('checkout', (self.rev,), 'Failed to checkout revision')
 
-            status = subprocess.call(r'git clone "%s" "%s"' %
-                    (self.cache_path, self.options['location']), shell=True)
-            if status != 0:
-                raise zc.buildout.UserError("Failed to clone repository")
+            git('clone', (self.cache_path, self.options['location']), 'Failed to clone repository')
 
             if self.as_egg:
                 self._install_as_egg()
@@ -144,10 +141,8 @@ class Recipe(object):
             print "Pulling updates from origin"
             os.chdir(self.options['location'])
             try:
-                status = subprocess.call('git pull origin "%s"' % (self.branch),
-                        shell=True)
-                if status != 0:
-                    raise zc.buildout.UserError("Failed to pull")
+                git('pull origin', (self.branch), 'Failed to pull')
+
                 if self.as_egg:
                     self._install_as_egg()
             finally:
@@ -164,3 +159,4 @@ class Recipe(object):
         path = self.options['location']
         target = self.buildout['buildout']['develop-eggs-directory']
         zc.buildout.easy_install.develop(path, target)
+
