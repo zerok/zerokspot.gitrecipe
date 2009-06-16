@@ -21,6 +21,7 @@ import subprocess
 import os.path
 import zc.buildout
 import shutil
+from pdb import set_trace
 
 def get_reponame(url):
     """
@@ -54,7 +55,6 @@ class Recipe(object):
     """
     def __init__(self, buildout, name, options):
         self.buildout, self.name, self.options = buildout, name, options
-        self.installed_from_cache = None
         self.repository = options['repository']
         self.branch = options.get('branch', 'master')
         self.rev = options.get('rev', None)
@@ -70,6 +70,7 @@ class Recipe(object):
         options['location'] = os.path.join(
                 buildout['buildout']['parts-directory'], name)
         self.as_egg = options.get('as_egg', 'false').lower() == 'true'
+        self.installed_from_cache = False
 
     def install(self):
         """
@@ -80,26 +81,29 @@ class Recipe(object):
         Returns the path to the part's directory.
         """
 
-        copy_to_cache = False
-        self.installed_from_cache = False
         if self.cache_install:
             # Check if a repo with the same name exists in the download cache
             # and copy it into parts/<part-name>. If there is nothing inside
             # the download cache, fetch the repo as usual and then copy it
             # into the download cache.
+            #set_trace()
             if os.path.exists(self.cache_path):
                 shutil.copytree(self.cache_path, self.options['location']) 
                 os.chdir(self.buildout['buildout']['directory'])
                 self.installed_from_cache = True
                 return self.options['location']
-            else:
-                copy_to_cache = True
-        status = subprocess.call(r'git clone "%s" "%s"' %
-                (self.repository, self.options['location']), shell=True)
-        if status != 0:
-            raise zc.buildout.UserError("Failed to clone repository")
-        try:
-            os.chdir(self.options['location'])
+        else:
+            os.chdir(self.buildout['buildout']['download-cache'])
+
+            if os.path.exists(self.cache_path):
+                shutil.rmtree(self.cache_path)
+
+            status = subprocess.call(r'git clone "%s" "%s"' %
+                    (self.repository, self.cache_name), shell=True)
+            if status != 0:
+                raise zc.buildout.UserError("Failed to clone repository")
+
+            os.chdir(self.cache_path)
             if self.branch != 'master':
                 branch = 'origin/%s' % (self.branch, )
             else:
@@ -115,14 +119,17 @@ class Recipe(object):
             if status != 0:
                 raise zc.buildout.UserError("Failed to checkout revision")
 
+            status = subprocess.call(r'git clone "%s" "%s"' %
+                    (self.cache_path, self.options['location']), shell=True)
+            if status != 0:
+                raise zc.buildout.UserError("Failed to clone repository")
+
             if self.as_egg:
                 self._install_as_egg()
-        finally:
-            if copy_to_cache:
-                shutil.copytree(self.options['location'], self.cache_path)
-                self.installed_from_cache = True
+
             os.chdir(self.buildout['buildout']['directory'])
             return self.options['location']
+
 
     def update(self):
         """

@@ -32,7 +32,8 @@ class RecipeTests(unittest.TestCase):
         self.tempdir = tempfile.mkdtemp()
         self.tempcache = tempfile.mkdtemp()
         self.temprepos = tempfile.mkdtemp()
-        self.temprepo = os.path.join(self.temprepos, 'testrepo')
+        self.repo_name = 'testrepo'
+        self.temprepo = os.path.join(self.temprepos, self.repo_name)
 
         testing.mkdir(self.temprepo)
 
@@ -64,9 +65,11 @@ repository = %(repo)s
         """ % {'repo' : self.temprepo})
         build = zc.buildout.buildout.Buildout(os.path.join(self.tempdir, 'buildout.cfg'), [])
         build.install(None)
-        self.assertTrue(os.path.exists(os.path.join(build['buildout']['download-cache'], 'gittest', 'test.txt')))
+        self.assertTrue(os.path.exists(os.path.join(build['buildout']['download-cache'], self.repo_name, 'test.txt')))
         self.assertTrue(os.path.exists(os.path.join(self.tempdir, 'parts', 'gittest', 'test.txt')))
-    
+
+    #TODO RaiseExceptionOnAbsentCache
+
     def testOffline(self):
         """
         Tests if install from the dowload-cache works.
@@ -84,3 +87,11 @@ repository = %(repo)s
         build = zc.buildout.buildout.Buildout(os.path.join(self.tempdir, 'buildout.cfg'), [])
         build.install(None)
         self.assertTrue(build['gittest'].recipe.installed_from_cache)
+
+if __name__ == '__main__':
+    sys.path.insert(0,  os.path.normpath(
+                            os.path.join(
+                                os.path.dirname(__file__) or os.getcwd(),
+                                '../../../'
+                            )))
+    unittest.main()
