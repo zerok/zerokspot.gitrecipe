@@ -28,16 +28,25 @@ class UtilsTests(unittest.TestCase):
             self.assertEqual('test', get_reponame(t))
 
     def testBranch(self):
+        """
+        Test reponame with branch
+        """
         from zerokspot.recipe.git import get_reponame
         self.assertEqual(
             'test@cool-feature', get_reponame('http://domain.com/test.git', 'cool-feature'))
 
     def testRev(self):
+        """
+        Test reponame with revision
+        """
         from zerokspot.recipe.git import get_reponame
         self.assertEqual(
             'test@1234', get_reponame('http://domain.com/test.git', rev = '1234'))
 
     def testBranchAndRev(self):
+        """
+        Test reponame with branch and revision
+        """
         from zerokspot.recipe.git import get_reponame
         self.assertEqual(
             'test@1234', get_reponame('http://domain.com/test.git', 'cool-feature', '1234'))
@@ -93,6 +102,9 @@ repository = %(repo)s
         self.assertTrue(os.path.exists(os.path.join(self.tempdir, 'parts', 'gittest', 'test.txt')))
 
     def testRaiseExceptionOnAbsentCache(self):
+        """
+        install-from-cache without cache should raise an exception
+        """
         testing.write(self.tempdir, 'buildout.cfg', """
 [buildout]
 parts = gittest
