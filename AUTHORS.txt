@@ -6,3 +6,4 @@ Contributors:
     
     * Jannis Leidel <http://jezdez.com/> 
     * Matthew R. Scott <http://http://goldenspud.com/rotr/>
+    * Alexander Artemenko <http://aartemenko.com/>

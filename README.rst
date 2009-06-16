@@ -31,3 +31,28 @@ newest
 as_egg
     Set to True if you want the checkout to be registered as a
     development egg in your buildout.
+
+cache-name
+    Name of the repository in the download-cache directory.
+
+
+Offline installation
+--------------------
+
+If you want to install a part from the download-cache, this is now possible, too::
+    
+    [buildout]
+    parts = myapp
+    download-cache = /var/cache/buildout
+    install-from-cache = true
+
+    [mylib]
+    recipe = zerokspot.recipe.git
+    repository = http://domain.com/repo.git
+
+With this configuration, the recipe will look for /var/cache/buildout/repo and
+clone it into the local parts/ folder.
+
+The recipe also supports an additional "cache-name" setting that lets you
+configure the folder name of the repository in the download cache.
+
