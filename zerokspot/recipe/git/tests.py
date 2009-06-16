@@ -31,13 +31,24 @@ class RecipeTests(unittest.TestCase):
     def setUp(self):
         self.tempdir = tempfile.mkdtemp()
         self.tempcache = tempfile.mkdtemp()
-        self.temprepo = os.path.join(self.tempcache, 'testrepo')
-        os.mkdir(self.temprepo)
+        self.temprepos = tempfile.mkdtemp()
+        self.temprepo = os.path.join(self.temprepos, 'testrepo')
+
+        testing.mkdir(self.temprepo)
+
+        os.chdir(self.tempdir)
+
         testing.system('cd %s && git init' % self.temprepo)
         testing.write(self.temprepo, 'test.txt', 'TEST')
         testing.system('cd %s && git add test.txt && git commit -m "Init"' % self.temprepo)
 
-    
+
+    def tearDown(self):
+        testing.rmdir(self.tempdir)
+        testing.rmdir(self.tempcache)
+        testing.rmdir(self.temprepos)
+
+
     def testFetch(self):
         """
         Tests if the basic cloning of the repository works.
@@ -51,7 +62,9 @@ parts = gittest
 recipe = zerokspot.recipe.git
 repository = %(repo)s
         """ % {'repo' : self.temprepo})
-        testing.system('cd %s && buildout' % self.tempdir) 
+        build = zc.buildout.buildout.Buildout(os.path.join(self.tempdir, 'buildout.cfg'), [])
+        build.install(None)
+        self.assertTrue(os.path.exists(os.path.join(build['buildout']['download-cache'], 'gittest', 'test.txt')))
         self.assertTrue(os.path.exists(os.path.join(self.tempdir, 'parts', 'gittest', 'test.txt')))
     
     def testOffline(self):
@@ -71,7 +84,3 @@ repository = %(repo)s
         build = zc.buildout.buildout.Buildout(os.path.join(self.tempdir, 'buildout.cfg'), [])
         build.install(None)
         self.assertTrue(build['gittest'].recipe.installed_from_cache)
-
-    def tearDown(self):
-        testing.rmdir(self.tempdir)
-        testing.rmdir(self.temprepo)
