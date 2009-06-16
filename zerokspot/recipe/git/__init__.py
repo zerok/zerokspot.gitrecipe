@@ -91,6 +91,8 @@ class Recipe(object):
                 os.chdir(self.buildout['buildout']['directory'])
                 self.installed_from_cache = True
                 return self.options['location']
+            else:
+                raise zc.buildout.UserError("No repository in the download cache directory.")
         else:
             os.chdir(self.buildout['buildout']['download-cache'])
 

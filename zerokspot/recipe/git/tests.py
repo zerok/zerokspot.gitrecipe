@@ -68,7 +68,22 @@ repository = %(repo)s
         self.assertTrue(os.path.exists(os.path.join(build['buildout']['download-cache'], self.repo_name, 'test.txt')))
         self.assertTrue(os.path.exists(os.path.join(self.tempdir, 'parts', 'gittest', 'test.txt')))
 
-    #TODO RaiseExceptionOnAbsentCache
+    def testRaiseExceptionOnAbsentCache(self):
+        testing.write(self.tempdir, 'buildout.cfg', """
+[buildout]
+parts = gittest
+download-cache = %(cache)s
+install-from-cache = true
+
+[gittest]
+recipe = zerokspot.recipe.git
+repository = %(repo)s
+        """ % {'repo' : self.temprepo, 'cache': self.tempcache})
+
+        build = zc.buildout.buildout.Buildout(
+                    os.path.join(self.tempdir, 'buildout.cfg'), [])
+        self.assertRaises(zc.buildout.UserError, build.install, None)
+
 
     def testOffline(self):
         """
