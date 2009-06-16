@@ -30,14 +30,17 @@ def git(operation, args, message):
     if status != 0:
         raise zc.buildout.UserError(message)
 
-def get_reponame(url):
+def get_reponame(url, branch = None, rev = None):
     """
     Given the URL of a repository, this function returns the name of it after
     a clone process.
     """
     base = filter(lambda x: len(x), url.split('/'))[-1]
     if base.endswith('.git'):
-        return base[:-4]
+        base = base[:-4]
+
+    if rev != None or branch != None:
+        base = base + '@' + (rev or branch)
     return base
 
 class Recipe(object):
@@ -71,7 +74,7 @@ class Recipe(object):
                 buildout['buildout'].get('install-from-cache', 'false')) \
                         .lower() == 'true'
         self.cache_name = options.get('cache-name', 
-                get_reponame(self.repository))
+                get_reponame(self.repository, self.branch, self.rev))
         self.cache_path = os.path.join(buildout['buildout']['download-cache'],
                 self.cache_name)
         options['location'] = os.path.join(

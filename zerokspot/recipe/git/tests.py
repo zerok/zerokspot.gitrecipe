@@ -27,6 +27,22 @@ class UtilsTests(unittest.TestCase):
         for t in tests:
             self.assertEqual('test', get_reponame(t))
 
+    def testBranch(self):
+        from zerokspot.recipe.git import get_reponame
+        self.assertEqual(
+            'test@cool-feature', get_reponame('http://domain.com/test.git', 'cool-feature'))
+
+    def testRev(self):
+        from zerokspot.recipe.git import get_reponame
+        self.assertEqual(
+            'test@1234', get_reponame('http://domain.com/test.git', rev = '1234'))
+
+    def testBranchAndRev(self):
+        from zerokspot.recipe.git import get_reponame
+        self.assertEqual(
+            'test@1234', get_reponame('http://domain.com/test.git', 'cool-feature', '1234'))
+
+
 class RecipeTests(unittest.TestCase):
     def setUp(self):
         self.tempdir = tempfile.mkdtemp()
