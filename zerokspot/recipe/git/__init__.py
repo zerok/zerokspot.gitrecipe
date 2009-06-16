@@ -30,10 +30,9 @@ def git(operation, args, message, ignore_errnos=None):
     codes, they will be not handled as errors if returned by git.
     """
     real_args = ['-q'] + list(args)
-    command = r'git %s ' + ' '.join(('"%s"',) * len(real_args))
-    command = command % ((operation,) + tuple(real_args))
-    status = subprocess.call(command, shell=True, stdout=None,#open(os.devnull, 'w'),
-            stderr=subprocess.STDOUT)
+    command = r'git %s ' + ' '.join(('"%s"', ) * len(real_args))
+    command = command % ((operation, ) + tuple(real_args))
+    status = subprocess.call(command, shell=True)
     if ignore_errnos is None:
         ignore_errnos = []
     if status != 0 and status not in ignore_errnos:
@@ -52,6 +51,7 @@ def get_reponame(url, branch = None, rev = None):
     if rev != None or branch != None:
         base = base + '@' + (rev or branch)
     return base
+
 
 class Recipe(object):
     """
@@ -73,6 +73,7 @@ class Recipe(object):
         Set to True if you want the checkout to be registered as a
         development egg in your buildout.
     """
+
     def __init__(self, buildout, name, options):
         self.buildout, self.name, self.options = buildout, name, options
         self.repository = options['repository']
@@ -84,11 +85,13 @@ class Recipe(object):
         self.cache_install = self.offline or options.get('install-from-cache',
                 buildout['buildout'].get('install-from-cache', 'false')) \
                         .lower() == 'true'
-        self.cache_name = options.get('cache-name', 
+        self.cache_name = options.get('cache-name',
                 get_reponame(self.repository))
-        self.download_cache = self.buildout['buildout'].get('download-cache', None)
+        self.download_cache = self.buildout['buildout'] \
+                .get('download-cache', None)
         if self.download_cache:
-            self.cache_path = os.path.join(buildout['buildout']['download-cache'],
+            self.cache_path = os.path.join(
+                    buildout['buildout']['download-cache'],
                     self.cache_name)
         options['location'] = os.path.join(
                 buildout['buildout']['parts-directory'], name)
@@ -168,20 +171,19 @@ class Recipe(object):
                 args = ('-t', 'origin/%s' % self.branch, )
             else:
                 args = ('master', )
-            git('checkout', args, "Failed to switch to branch '%s'" % args[-1], ignore_errnos=[128])
+            git('checkout', args, "Failed to switch to branch '%s'" % args[-1],
+                    ignore_errnos=[128])
             if self.rev is not None:
                 git('checkout', (self.rev, ), "Failed to checkout revision")
         finally:
             os.chdir(self.root_dir)
-    
+
     def _clone_cache(self):
         """
         Clone the cache into the parts directory.
         """
         if not os.path.exists(self.cache_path):
             self._clone_upstream()
-        if os.path.exists(self.options['location']):
-            shutil.rmtree(self.options['location'])
         self._clone(self.cache_path, self.options['location'])
         self.cache_cloned = True
 
@@ -212,7 +214,8 @@ class Recipe(object):
         """
         try:
             os.chdir(path)
-            git('pull', ('origin', self.branch, ), "Failed to update repository")
+            git('pull', ('origin', self.branch, ),
+                    "Failed to update repository")
         finally:
             os.chdir(self.root_dir)
 
@@ -223,4 +226,3 @@ class Recipe(object):
         path = self.options['location']
         target = self.buildout['buildout']['develop-eggs-directory']
         zc.buildout.easy_install.develop(path, target)
-
