@@ -134,7 +134,7 @@ class Recipe(object):
             else:
                 self._clone(self.repository, self.options['location'])
         if self.as_egg:
-            self_install_as_egg()
+            self._install_as_egg()
         return self.options['location']
 
     def update(self):
