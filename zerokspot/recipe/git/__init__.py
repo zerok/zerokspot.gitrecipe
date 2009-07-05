@@ -93,6 +93,8 @@ class Recipe(object):
             self.cache_path = os.path.join(
                     buildout['buildout']['download-cache'],
                     self.cache_name)
+        else:
+            self.cache_path = None
         options['location'] = os.path.join(
                 buildout['buildout']['parts-directory'], name)
         self.as_egg = options.get('as_egg', 'false').lower() == 'true'
@@ -147,7 +149,7 @@ class Recipe(object):
         if self.rev is None and self.newest:
             # Do an update of the current branch
             print "Pulling updates from origin"
-            if not self.cache_install:
+            if not self.cache_install and self.download_cache:
                 self._update_cache()
             self._update_part()
             os.chdir(self.options['location'])

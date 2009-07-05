@@ -87,7 +87,7 @@ class RecipeTests(unittest.TestCase):
 
     def testFetch(self):
         """
-        Tests if the basic cloning of the repository works.
+        Tests if the basic cloning and updating of the repository works.
         """
 
         testing.write(self.tempdir, 'buildout.cfg', """
@@ -100,6 +100,7 @@ repository = %(repo)s
         """ % {'repo' : self.temprepo})
         self._buildout()
         self.assertTrue(os.path.exists(os.path.join(self.tempdir, 'parts', 'gittest', 'test.txt')))
+        self._buildout()
 
     def testRaiseExceptionOnAbsentCache(self):
         """
@@ -146,6 +147,7 @@ repository = %(repo)s
         # now install from cache
         build = self._buildout([('buildout', 'install-from-cache', 'true')])
         self.assertTrue(build['gittest'].recipe.installed_from_cache)
+        build = self._buildout([('buildout', 'install-from-cache', 'true')])
 
     def testNonstandardBranch(self):
         """
@@ -165,6 +167,7 @@ repository = %(repo)s
         recipe = build['gittest'].recipe
         self.assertTrue(os.path.exists(os.path.join(recipe.cache_path, 'test2.txt')))
         self.assertTrue(os.path.exists(os.path.join(recipe.options['location'], 'test2.txt')))
+        self._buildout()
 
 if __name__ == '__main__':
     sys.path.insert(0,  os.path.normpath(
