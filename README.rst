@@ -24,6 +24,10 @@ branch
     If you want to stay up to date with a certain branch other than
     "master", use this.
 
+paths
+    List of relative paths to packages to develop. Must be used together
+    with as_egg=true.
+
 newest
     This overrides the newest-option of the global setting for this
     part

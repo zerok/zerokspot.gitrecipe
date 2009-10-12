@@ -5,6 +5,13 @@ import tempfile
 from zc.buildout import testing
 import zc.buildout
 
+def do_buildout(buildout_file, options=None):
+    if options is None:
+        options = []
+    build = zc.buildout.buildout.Buildout(buildout_file, options)
+    build.init(None)
+    build.install(None)
+    return build
 
 class UtilsTests(unittest.TestCase):
     """
@@ -78,12 +85,7 @@ class RecipeTests(unittest.TestCase):
         testing.rmdir(self.temprepos)
 
     def _buildout(self, options=None):
-        if options is None:
-            options = []
-        build = zc.buildout.buildout.Buildout(os.path.join(self.tempdir, 'buildout.cfg'), options)
-        build.init(None)
-        build.install(None)
-        return build
+        return do_buildout(os.path.join(self.tempdir, 'buildout.cfg'), options)
 
     def testFetch(self):
         """
@@ -182,6 +184,43 @@ as_egg = true
         buildout = self._buildout()
         installs = os.listdir(buildout['buildout']['develop-eggs-directory'])
         self.assertTrue('zerokspot.recipe.git.egg-link' in installs)
+
+class MultiEggTests(unittest.TestCase):
+    def setUp(self):
+        self.projectdir = tempfile.mkdtemp()
+        self.temprepo = tempfile.mkdtemp()
+        for i in range(2):
+            base_dir = os.path.join(self.temprepo, 'project%d' % (i, ))
+            testing.mkdir(base_dir)
+            setup_py = '''from setuptools import setup
+setup(name='project%(num)d', version='1.0', py_modules=['test'])''' % {'num': i}
+            with open(os.path.join(base_dir, 'setup.py'), 'w+') as fp:
+                fp.write(setup_py)
+            with open(os.path.join(base_dir, 'test.py'), 'w+') as fp:
+                fp.write('# Dummy module')
+        testing.system('cd %s && git init && git add * && git commit -m "Test"' % self.temprepo)
+
+    def testBasic(self):
+        testing.write(self.projectdir, 'buildout.cfg', """
+[buildout]
+parts = gittest
+
+[gittest]
+recipe = zerokspot.recipe.git
+repository = %(repo)s
+as_egg = true
+paths = 
+    project0
+    project1
+""" % {'repo': self.temprepo})
+        buildout = do_buildout(os.path.join(self.projectdir, 'buildout.cfg'))
+        installs = os.listdir(buildout['buildout']['develop-eggs-directory'])
+        self.assertTrue('project0.egg-link' in installs)
+        self.assertTrue('project1.egg-link' in installs)
+
+    def tearDown(self):
+        testing.rmdir(self.temprepo)
+        testing.rmdir(self.projectdir)
 
 if __name__ == '__main__':
     sys.path.insert(0,  os.path.normpath(

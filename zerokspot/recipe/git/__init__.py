@@ -6,6 +6,7 @@ subversion repositories::
     [myapp]
     recipe = zerokspot.recipe.git
     repository = <url-of-repository>
+    paths = <relative-paths-to-packages-inside-repository>
     branch = <name-of-branch> # default: "master"
     rev = <name-of-revision> # default: None
     newest = [true|false] # default: false, stay up to date even when
@@ -68,10 +69,15 @@ class Recipe(object):
         Revision that should be used. This is useful if you want to freeze
         the source at a given revision. If this is used, an update won't do
         all that much when executed.
-
+        
+    paths
+        List of relative paths to packages to develop. Must be used together
+        with as_egg=true.
+        
     as_egg
         Set to True if you want the checkout to be registered as a
         development egg in your buildout.
+        
     """
 
     def __init__(self, buildout, name, options):
@@ -104,6 +110,7 @@ class Recipe(object):
         self.part_updated = False
         self.cache_cloned = False
         self.installed_from_cache = False
+        self.paths = options.get('paths', None)
 
     def install(self):
         """
@@ -225,6 +232,13 @@ class Recipe(object):
         """
         Install clone as development egg.
         """
-        path = self.options['location']
+        def _install(path, target):
+            zc.buildout.easy_install.develop(path, target)
+            
         target = self.buildout['buildout']['develop-eggs-directory']
-        zc.buildout.easy_install.develop(path, target)
+        if self.paths:
+            for path in self.paths.split():
+                path = os.path.join(self.options['location'], path.strip())
+                _install(path, target)
+        else:
+            _install(self.options['location'], target)
