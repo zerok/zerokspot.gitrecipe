@@ -169,6 +169,20 @@ repository = %(repo)s
         self.assertTrue(os.path.exists(os.path.join(recipe.options['location'], 'test2.txt')))
         self._buildout()
 
+    def testSingleEgg(self):
+        testing.write(self.tempdir, 'buildout.cfg', """
+[buildout]
+parts = gittest
+
+[gittest]
+recipe = zerokspot.recipe.git
+repository = %(repo)s
+as_egg = true
+        """ % {'repo': os.path.join(os.path.dirname(__file__), '../../../')})
+        buildout = self._buildout()
+        installs = os.listdir(buildout['buildout']['develop-eggs-directory'])
+        self.assertTrue('zerokspot.recipe.git.egg-link' in installs)
+
 if __name__ == '__main__':
     sys.path.insert(0,  os.path.normpath(
                             os.path.join(
