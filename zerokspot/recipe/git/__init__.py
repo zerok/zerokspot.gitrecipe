@@ -24,13 +24,17 @@ import zc.buildout
 import shutil
 
 
-def git(operation, args, message, ignore_errnos=None):
+def git(operation, args, message, ignore_errnos=None, verbose=False):
     """
     Execute a git operation with the given arguments. If it fails, raise an
     exception with the given message. If ignore_errnos is a list of status
     codes, they will be not handled as errors if returned by git.
     """
-    real_args = ['-q'] + list(args)
+    if verbose:
+        real_args = list(args)
+    else:
+        real_args = ['-q'] + list(args)
+    
     command = r'git %s ' + ' '.join(('"%s"', ) * len(real_args))
     command = command % ((operation, ) + tuple(real_args))
     status = subprocess.call(command, shell=True)
@@ -179,7 +183,7 @@ class Recipe(object):
             if self.branch != 'master':
                 if not '[branch "%s"]' % self.branch in open(os.path.join('.git', 'CONFIG')).read():
                     git('branch', ('--track', self.branch, 'origin/%s' % self.branch),
-                        "Failed to set up to track remote branch")
+                        "Failed to set up to track remote branch", verbose=True)
                 if not "ref: refs/heads/%s" % self.branch in open(os.path.join('.git', 'HEAD')).read():
                     git('checkout', (self.branch,), "Failed to switch to branch '%s'" % self.branch,
                         ignore_errnos=[128])
