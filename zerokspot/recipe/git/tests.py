@@ -6,6 +6,8 @@ import tempfile
 from zc.buildout import testing
 import zc.buildout
 
+FILE = os.path.abspath(__file__)
+
 def do_buildout(buildout_file, options=None):
     if options is None:
         options = []
@@ -173,6 +175,7 @@ repository = %(repo)s
         self._buildout()
 
     def testSingleEgg(self):
+        repo = os.path.join(os.path.dirname(FILE), '../../../')
         testing.write(self.tempdir, 'buildout.cfg', """
 [buildout]
 parts = gittest
@@ -181,7 +184,7 @@ parts = gittest
 recipe = zerokspot.recipe.git
 repository = %(repo)s
 as_egg = true
-        """ % {'repo': os.path.join(os.path.dirname(__file__), '../../../')})
+        """ % {'repo': repo})
         buildout = self._buildout()
         installs = os.listdir(buildout['buildout']['develop-eggs-directory'])
         self.assertTrue('zerokspot.recipe.git.egg-link' in installs)
