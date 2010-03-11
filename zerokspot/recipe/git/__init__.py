@@ -177,7 +177,7 @@ class Recipe(object):
             os.chdir(to)
 
             if self.branch != 'master':
-                args = ('-t', 'origin/%s' % self.branch, )
+                args = ('-t', 'origin/%s' % self.branch, '-b', self.branch)
             else:
                 args = ('master', )
             git('checkout', args, "Failed to switch to branch '%s'" % args[-1],
