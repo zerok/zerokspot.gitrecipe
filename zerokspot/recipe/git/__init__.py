@@ -181,7 +181,7 @@ class Recipe(object):
             os.chdir(to)
 
             if self.branch != 'master':
-                if not '[branch "%s"]' % self.branch in open(os.path.join('.git', 'CONFIG')).read():
+                if not '[branch "%s"]' % self.branch in open(os.path.join('.git', 'config')).read():
                     git('branch', ('--track', self.branch, 'origin/%s' % self.branch),
                         "Failed to set up to track remote branch", verbose=True)
                 if not "ref: refs/heads/%s" % self.branch in open(os.path.join('.git', 'HEAD')).read():
