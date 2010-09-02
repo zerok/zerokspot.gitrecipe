@@ -8,3 +8,4 @@ Contributors:
     * Matthew R. Scott <http://http://goldenspud.com/rotr/>
     * Alexander Artemenko <http://aartemenko.com/>
     * Taras Mankovski <http://taras.cc/>
+    * crucialfelix <http://github.com/crucialfelix>
