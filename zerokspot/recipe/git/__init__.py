@@ -115,6 +115,7 @@ class Recipe(object):
         self.cache_cloned = False
         self.installed_from_cache = False
         self.paths = options.get('paths', None)
+        self.verbose = int(buildout['buildout'].get('verbosity', 0)) > 0
 
     def install(self):
         """
@@ -159,7 +160,8 @@ class Recipe(object):
         """
         if self.rev is None and self.newest:
             # Do an update of the current branch
-            print "Pulling updates from origin"
+            if self.verbose:
+                print "Pulling updates from origin"
             if not self.cache_install and self.download_cache:
                 self._update_cache()
             self._update_part()
@@ -169,7 +171,8 @@ class Recipe(object):
         else:
             # "newest" is also automatically disabled if "offline"
             # is set.
-            print "Pulling disable for this part"
+            if self.verbose:
+                print "Pulling disable for this part"
 
     def _clone(self, from_, to):
         """
