@@ -1,2 +1,2 @@
 include *.rst *.txt MANIFEST.in
-recursive-include *.py
+recursive-include zerokspot *.py
