@@ -1,0 +1,2 @@
+include *.rst *.txt MANIFEST.in
+recursive-include *.py
