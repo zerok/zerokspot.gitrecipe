@@ -73,15 +73,19 @@ class Recipe(object):
         Revision that should be used. This is useful if you want to freeze
         the source at a given revision. If this is used, an update won't do
         all that much when executed.
-        
+
     paths
         List of relative paths to packages to develop. Must be used together
         with as_egg=true.
-        
+
     as_egg
         Set to True if you want the checkout to be registered as a
         development egg in your buildout.
-        
+
+    recursive
+        Set to True if you want the clone to be recursive, and the updates
+        to include submodule updates.
+        Do note that submodules are not cloned from the download cache!
     """
 
     def __init__(self, buildout, name, options):
@@ -108,6 +112,7 @@ class Recipe(object):
         options['location'] = os.path.join(
                 buildout['buildout']['parts-directory'], name)
         self.as_egg = options.get('as_egg', 'false').lower() == 'true'
+        self.recursive = options.get('recursive', 'false').lower() == 'true'
         self.root_dir = self.buildout['buildout']['directory']
         self.cache_created = False
         self.cache_updated = False
@@ -146,7 +151,7 @@ class Recipe(object):
                     self.installed_from_cache = True
                 self._clone_cache()
             else:
-                self._clone(self.repository, self.options['location'])
+                self._clone(self.repository, self.options['location'], self.recursive)
         if self.as_egg:
             self._install_as_egg()
         return self.options['location']
@@ -165,6 +170,8 @@ class Recipe(object):
             if not self.cache_install and self.download_cache:
                 self._update_cache()
             self._update_part()
+            if self.recursive:
+                self._update_part_submodules()
             os.chdir(self.options['location'])
             if self.as_egg:
                 self._install_as_egg()
@@ -174,11 +181,13 @@ class Recipe(object):
             if self.verbose:
                 print "Pulling disable for this part"
 
-    def _clone(self, from_, to):
+    def _clone(self, from_, to, with_recursive_flag=False):
         """
         Clone a repository located at ``from_`` to ``to``.
         """
         try:
+            args = ('--recursive', from_, to,) if with_recursive_flag \
+                                               else (from_, to,)
             git('clone', (from_, to), "Couldn't clone %s into %s" % (
                     from_, to, ))
             os.chdir(to)
@@ -236,6 +245,24 @@ class Recipe(object):
                     "Failed to update repository")
         finally:
             os.chdir(self.root_dir)
+
+    def _update_part_submodules(self):
+        """
+        Updates the repository submodules in the buildout's parts directory.
+        """
+        self._update_submodules(self.options['location'])
+
+    def _update_submodules(self, path):
+        """
+        Update the submodules from the given path
+        """
+        try:
+            os.chdir(path)
+            git('submodule', ('update', '--init', '--recursive',),
+                    "Failed to update submodules")
+        finally:
+            os.chdir(self.root_dir)
+
 
     def _install_as_egg(self):
         """
