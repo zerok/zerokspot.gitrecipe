@@ -151,7 +151,7 @@ class Recipe(object):
                     self.installed_from_cache = True
                 self._clone_cache()
             else:
-                self._clone(self.repository, self.options['location'], self.recursive)
+                self._clone(self.repository, self.options['location'])
         if self.as_egg:
             self._install_as_egg()
         return self.options['location']
@@ -181,14 +181,14 @@ class Recipe(object):
             if self.verbose:
                 print "Pulling disable for this part"
 
-    def _clone(self, from_, to, with_recursive_flag=False):
+    def _clone(self, from_, to):
         """
         Clone a repository located at ``from_`` to ``to``.
         """
         try:
-            args = ('--recursive', from_, to,) if with_recursive_flag \
+            args = ('--recursive', from_, to,) if self.recursive \
                                                else (from_, to,)
-            git('clone', (from_, to), "Couldn't clone %s into %s" % (
+            git('clone', args, "Couldn't clone %s into %s" % (
                     from_, to, ))
             os.chdir(to)
 
