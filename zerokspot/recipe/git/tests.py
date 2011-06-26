@@ -80,6 +80,11 @@ class RecipeTests(unittest.TestCase):
         testing.write(self.temprepo, 'test.txt', 'TEST')
         testing.system('cd %s && git add test.txt && git commit -m "Init"' % self.temprepo)
         testing.write(self.temprepo, 'test2.txt', 'TEST')
+        submodule_path = os.path.join(self.temprepo, 'submodule_repo')
+        testing.system('mkdir -p %s && cd %s && git init && echo 1 > file && git add file && git commit -m file' % (submodule_path, submodule_path))
+        self.assertTrue(os.path.exists(os.path.join(submodule_path, '.git')))
+        testing.system('cd %s && git submodule add %s submodule && git add .gitmodules && git commit -m submodule' % (self.temprepo, submodule_path))
+        self.assertTrue(os.path.exists(os.path.join(self.temprepo, '.gitmodules')))
         testing.system('cd %s && git checkout -b test && git add test2.txt && git commit -m "Test-branch" && git checkout master' % self.temprepo)
 
     def tearDown(self):
@@ -188,6 +193,26 @@ as_egg = true
         buildout = self._buildout()
         installs = os.listdir(buildout['buildout']['develop-eggs-directory'])
         self.assertTrue('zerokspot.recipe.git.egg-link' in installs)
+
+    def testRecursive(self):
+        """
+        Tests if install works for recursive clone
+        """
+        testing.write(self.tempdir, 'buildout.cfg', """
+[buildout]
+parts = gittest
+download-cache = %(cache)s
+install-from-cache = false
+
+[gittest]
+recipe = zerokspot.recipe.git
+recursive = true
+repository = %(repo)s
+        """ % {'repo' : self.temprepo, 'cache': self.tempcache})
+        build = self._buildout()
+        from glob import glob
+        path = os.path.join(self.tempdir, 'parts', 'gittest', 'submodule', '.git')
+        self.assertTrue(os.path.exists(path), "%s does not exist" % repr(path))
 
 class MultiEggTests(unittest.TestCase):
     def setUp(self):

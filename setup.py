@@ -6,7 +6,7 @@ setup(
         author_email='zerok@zerokspot.com',
         description='Simple zc.buildout recipe for sources in a git repository',
         long_description = open('README.rst', 'r').read(),
-        version='0.5.6',
+        version='0.5.6-1',
         url='http://github.com/zerok/zerokspot.gitrecipe/',
         install_requires=['setuptools', 'zc.buildout'],
         namespace_packages=['zerokspot'],
