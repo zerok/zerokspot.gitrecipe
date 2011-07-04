@@ -39,6 +39,10 @@ as_egg
 cache-name
     Name of the repository in the download-cache directory.
 
+recursive
+    Follow submodule (Note that submodules are not cloned from the download
+    cache).
+
 
 Offline installation
 --------------------

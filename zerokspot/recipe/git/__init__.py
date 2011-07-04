@@ -270,7 +270,7 @@ class Recipe(object):
         """
         def _install(path, target):
             zc.buildout.easy_install.develop(path, target)
-            
+
         target = self.buildout['buildout']['develop-eggs-directory']
         if self.paths:
             for path in self.paths.split():
