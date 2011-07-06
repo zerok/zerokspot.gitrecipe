@@ -180,7 +180,7 @@ repository = %(repo)s
         self._buildout()
 
     def testSingleEgg(self):
-        repo = os.path.join(os.path.dirname(FILE), '../../../')
+        repo = 'git://github.com/zerok/zerokspot.gitrecipe.git'
         testing.write(self.tempdir, 'buildout.cfg', """
 [buildout]
 parts = gittest
