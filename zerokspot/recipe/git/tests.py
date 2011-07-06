@@ -218,6 +218,7 @@ class MultiEggTests(unittest.TestCase):
     def setUp(self):
         self.projectdir = tempfile.mkdtemp()
         self.temprepo = tempfile.mkdtemp()
+        os.chdir(self.projectdir)
         for i in range(2):
             base_dir = os.path.join(self.temprepo, 'project%d' % (i, ))
             testing.mkdir(base_dir)
@@ -250,6 +251,12 @@ paths =
     def tearDown(self):
         testing.rmdir(self.temprepo)
         testing.rmdir(self.projectdir)
+
+all_tests = unittest.TestSuite([
+    unittest.TestLoader().loadTestsFromTestCase(UtilsTests),
+    unittest.TestLoader().loadTestsFromTestCase(RecipeTests),
+    unittest.TestLoader().loadTestsFromTestCase(MultiEggTests),
+    ])
 
 if __name__ == '__main__':
     sys.path.insert(0,  os.path.normpath(

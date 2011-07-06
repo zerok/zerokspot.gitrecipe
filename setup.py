@@ -12,6 +12,7 @@ setup(
         namespace_packages=['zerokspot'],
         packages=find_packages(exclude=['ez_setup']),
         entry_points={'zc.buildout': ['default = zerokspot.recipe.git:Recipe']},
+        test_suite = 'zerokspot.recipe.git.tests.all_tests',
         classifiers=[
             'Development Status :: 3 - Alpha',
             'Environment :: Plugins',
