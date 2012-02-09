@@ -192,13 +192,12 @@ class Recipe(object):
                     from_, to, ))
             os.chdir(to)
 
-            if self.branch != 'master':
-                if not '[branch "%s"]' % self.branch in open(os.path.join('.git', 'config')).read():
-                    git('branch', ('--track', self.branch, 'origin/%s' % self.branch),
-                        "Failed to set up to track remote branch", verbose=True)
-                if not "ref: refs/heads/%s" % self.branch in open(os.path.join('.git', 'HEAD')).read():
-                    git('checkout', (self.branch,), "Failed to switch to branch '%s'" % self.branch,
-                        ignore_errnos=[128])
+            if not '[branch "%s"]' % self.branch in open(os.path.join('.git', 'config')).read():
+                git('branch', ('--track', self.branch, 'origin/%s' % self.branch),
+                    "Failed to set up to track remote branch", verbose=True)
+            if not "ref: refs/heads/%s" % self.branch in open(os.path.join('.git', 'HEAD')).read():
+                git('checkout', (self.branch,), "Failed to switch to branch '%s'" % self.branch,
+                    ignore_errnos=[128])
 
             if self.rev is not None:
                 git('checkout', (self.rev, ), "Failed to checkout revision")
