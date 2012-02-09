@@ -189,7 +189,7 @@ class Recipe(object):
             args = ('--recursive', from_, to,) if self.recursive \
                                                else (from_, to,)
             git('clone', args, "Couldn't clone %s into %s" % (
-                    from_, to, ))
+                    from_, to, ), verbose=True)
             os.chdir(to)
 
             if not '[branch "%s"]' % self.branch in open(os.path.join('.git', 'config')).read():
@@ -241,7 +241,7 @@ class Recipe(object):
         try:
             os.chdir(path)
             git('pull', ('origin', self.branch, ),
-                    "Failed to update repository")
+                    "Failed to update repository", verbose=True)
         finally:
             os.chdir(self.root_dir)
 
