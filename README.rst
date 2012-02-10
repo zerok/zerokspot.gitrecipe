@@ -1,3 +1,8 @@
+.. important::
+    
+    This package is no longer actively maintained and therefor won't see any new
+    features added to it. For more information please check out `the wiki <https://github.com/zerok/zerokspot.gitrecipe/wiki/EOL>`_
+
 This simple recipe for zc.buildout fetches data from a given repository
 and stores it into its part's directory. A simple task using this
 could look like this::

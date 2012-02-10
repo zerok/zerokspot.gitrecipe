@@ -21,7 +21,6 @@ This would store the cloned repository in ${buildout:directory}/parts/myapp.
 import subprocess
 import os.path
 import zc.buildout
-import shutil
 
 
 def git(operation, args, message, ignore_errnos=None, verbose=False):
