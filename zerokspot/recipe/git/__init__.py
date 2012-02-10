@@ -189,16 +189,15 @@ class Recipe(object):
             args = ('--recursive', from_, to,) if self.recursive \
                                                else (from_, to,)
             git('clone', args, "Couldn't clone %s into %s" % (
-                    from_, to, ))
+                    from_, to, ), verbose=True)
             os.chdir(to)
 
-            if self.branch != 'master':
-                if not '[branch "%s"]' % self.branch in open(os.path.join('.git', 'config')).read():
-                    git('branch', ('--track', self.branch, 'origin/%s' % self.branch),
-                        "Failed to set up to track remote branch", verbose=True)
-                if not "ref: refs/heads/%s" % self.branch in open(os.path.join('.git', 'HEAD')).read():
-                    git('checkout', (self.branch,), "Failed to switch to branch '%s'" % self.branch,
-                        ignore_errnos=[128])
+            if not '[branch "%s"]' % self.branch in open(os.path.join('.git', 'config')).read():
+                git('branch', ('--track', self.branch, 'origin/%s' % self.branch),
+                    "Failed to set up to track remote branch", verbose=True)
+            if not "ref: refs/heads/%s" % self.branch in open(os.path.join('.git', 'HEAD')).read():
+                git('checkout', (self.branch,), "Failed to switch to branch '%s'" % self.branch,
+                    ignore_errnos=[128])
 
             if self.rev is not None:
                 git('checkout', (self.rev, ), "Failed to checkout revision")
@@ -242,7 +241,7 @@ class Recipe(object):
         try:
             os.chdir(path)
             git('pull', ('origin', self.branch, ),
-                    "Failed to update repository")
+                    "Failed to update repository", verbose=True)
         finally:
             os.chdir(self.root_dir)
 
