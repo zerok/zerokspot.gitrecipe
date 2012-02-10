@@ -11,3 +11,4 @@ Contributors:
     * crucialfelix <http://github.com/crucialfelix>
     * Mark van Lent <http://github.com/markvl>
     * Guy Rozendorn <https://github.com/grzn>
+    * Andreas Motl <https://github.com/amotl>
